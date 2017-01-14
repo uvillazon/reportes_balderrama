@@ -1,0 +1,12 @@
+jdbc:mysql://70.35.196.209/novamod2_balderrama
+
+http://190.129.110.11:8080/jasperserver/login.html
+
+usuario y contraseña: jasperadmin
+
+http://190.129.110.11:8080/jasperserver/rest_v2/reports/reports/Mayor/ejemplo1.pdf?j_username=jasperadmin&j_password=jasperadmin
+
+http://[host]/[rest]/[ruta_reporte].[tipo pdf , xls , xlsx , doc , docx , cvs , xml , odp]?j_username=jasperadmin&j_password=jasperadmin
+
+http://190.129.110.11:8080/jasperserver/rest_v2/reports/reports/Mayor/ejemplo1.doc?j_username=jasperadmin&j_password=jasperadmin&ignorePagination=false
+

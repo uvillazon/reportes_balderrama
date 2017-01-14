@@ -1,0 +1,100 @@
+function VerRecapitulacionMarca($idalmacen,'$idalmacen2=alm-1','$mesperiodo',$fechainicio,$fechafin,$return)
+- Se imprime cabecera con el today
+- SELECT idkardex,tabla,mesrango,idperiodo,fechainicio,fechafin,mesanterior,estado FROM administrakardex 
+  WHERE mesrango= '$mesperiodo' and idalmacen = '$idalmacen'
+- Formateamos la fecha para imprimir un formato y desglozamos el mes tambien de mesperiodo
+- SELECT nombre FROM almacenes WHERE idalmacen = '$idalmacen' -> para el nombre de la oficina en la cabecera
+- $idmara = SELECT idmarca FROM marcas WHERE estado = 'activo' and origen = 'BRASIL' -> de acuerdo al idmarca se hace un FOR
+	- $sql25 = SELECT idempleado FROM empleadomarca WHERE idmarca = '$idmara' AND idalmacen ='$idalmacen' and estado='A'
+	- dibujarTablaOfSQLmarcarecapitulacionvendedor($mesperiodo,$sql25,$sql21(tallas),$row1(#filas tallas),$idmara,$porcentajecat(?),$parestotalactualcategoria(?),$idalmacen,$rango1(por marca tallas),$rango2(por marca tallas),$totalparesestilo(?),$totalbsestilo(?),$tipo(por marca),$marcapedido(por marca));
+	- Todo esto ya se selecciono arriba, mandarlo por parametro -> SELECT idkardex,tabla,mesrango,idperiodo,fechainicio,fechafin,mesanterior,estado FROM administrakardex 
+	  Si fechafin fuera nulo enviar ya con el today
+	- Todo esto tb. seleccionar arriba, cuando se selecciona el idmarca y solo se necesita el nombre -> $marcas = SELECT nombre AS marca,talla,opcionb,pedido FROM marcas WHERE idmarca = '$idmarca'
+	- Se imprime la cabecera del detalle, iniciamos variables totales por marca
+	- FOR por $dato = idempleado $sql25
+		- Esto se puede enviar por parametro solo nombre -> $marcalista = SELECT nombres FROM  empleados WHERE idempleado = '$dato' and estado!='Inactivo'
+		- Stock Actual
+		  - if($estado=="cerrado")
+		  	SELECT SUM(k.pares) AS Pares, SUM(k.pares*m.preciounitario) AS Precio
+			FROM kardexresumen k,modelo m
+			WHERE k.idmodelo = m.idmodelo AND k.idmarca = '$idmarca' and k.idvendedor = '$idempleado' 
+			AND m.idalmacen = '$idalmacen' and mes = '$mesrango'
+		    else
+			SELECT SUM(ka.saldocantidad) AS Pares, SUM(ka.saldocantidad*ka.preciounitario) AS Precio
+			FROM modelo m,kardexdetallepar ka
+			WHERE ka.idmodelo = m.idmodelo  aND m.idmarca = 'mar-34' and m.idalmacen='alm-3' and m.idvendedor='emp-82'
+		- Stock Mercaderia o Stock Anterior
+		  SELECT SUM(k.pares) AS Pares, SUM(k.pares*m.preciounitario) AS Precio
+		  FROM kardexresumen k,modelo m
+		  WHERE k.idmodelo = m.idmodelo AND k.idmarca = '$idmarca' and k.idvendedor = '$idempleado' and
+		  AND k.idalmacen = '$idalmacen' and k.mes = '$mesanterior'
+		- Recibidos 
+		  -> de ingresoalmacen
+		     SELECT SUM(k.totalcajas) AS Cajas, SUM(k.totalpares) AS Pares, SUM(k.totalbs) AS totalprecio
+		     FROM ingresoalmacen k
+		     WHERE k.idempleado='$idempleado' AND k.idmarca = '$idmarca' AND k.fecha >= '$fechainicio' 
+		     AND k.fecha <= '$fechafin' and k.idalmacen = '$idalmacen'
+		  -> de modelo, kardexdetallepar, proformas
+		     - Recibidos con traspaso
+		       SELECT COUNT(kp.idkardexunico) AS Pares, SUM(kp.preciounitario) AS sus
+		       FROM modelo m,kardexdetallepar kp,modelo as m2,proformas p
+		       WHERE kp.idmodelo = m.idmodelo and m.idingreso = p.id_proforma and m2.estadotraspaso = m.idmodelo and p.nombre != '00/2016'
+  		       and m2.idvendedor = '$idempleado' AND m.idmarca = '$idmarca' AND (DATE_FORMAT(p.fecha, '%Y-%m-%d')) >= '$fechainicio' 
+		       AND (DATE_FORMAT(p.fecha, '%Y-%m-%d')) <= '$fechafin' AND p.idalmacen = '$idalmacen' and m2.idmodelo != m2.estadotraspaso
+		     - recibidos con traspaso restante
+		       SELECT COUNT(kp.idkardexunico) AS Pares, SUM(kp.preciounitario) AS sus
+		       FROM modelo m,kardexdetallepar kp,proformas p
+		       WHERE m.idingreso=p.id_proforma and kp.idmodelo=m.idmodelo and m.estadotraspaso!='ninguno' and p.nombre!='00/2016' 
+		       and m.idvendedor='$idempleado' AND m.idmarca = '$idmarca' AND (DATE_FORMAT(p.fecha, '%Y-%m-%d')) >= '$fechainicio' 
+		       AND (DATE_FORMAT(p.fecha, '%Y-%m-%d')) <= '$fechafin' AND p.idalmacen='$idalmacen' and m.idalmacen='$idalmacen' and kp.idalmacen='$idalmacen' and m.boleta=p.id_proforma
+		     - Recibidos nuevos
+		       SELECT COUNT(kp.idkardexunico) AS Pares, SUM(kp.preciounitario) AS sus
+		       FROM modelo m,kardexdetallepar kp,proformas p
+		       WHERE m.idingreso=p.id_proforma and kp.idmodelo=m.idmodelo and m.estadotraspaso='ninguno' and p.nombre!='00/2016' 
+		       and m.idvendedor='$idempleado' AND m.idmarca = '$idmarca' AND (DATE_FORMAT(p.fecha, '%Y-%m-%d')) >= '$fechainicio' 
+		       AND (DATE_FORMAT(p.fecha, '%Y-%m-%d')) <= '$fechafin' AND p.idalmacen='$idalmacen' and m.idalmacen='$idalmacen' and kp.idalmacen='$idalmacen' and m.boleta=p.id_proforma
+		     Calcular cantidad de cajas de acuerdo a la cantidad total de pares/12
+		- Traspasos Enviados o Despachados
+		     - Traspasos Internos
+		       SELECT SUM(iv.saldocantidad) AS Pares, SUM(iv.preciounitario) AS TotalBs
+		       FROM traspasosinternos iv,modelo md,ventas v, empleados em,empleados emo
+		       WHERE iv.idventa = v.idventa and iv.idmodelo = md.idmodelo and iv.idvendedor = em.idempleado and iv.idvendedororigen = emo.idempleado 
+		       and iv.idvendedororigen = '$idempleado' AND md.idmarca = '$idmarca' AND iv.fecha >= '$fechainicio' AND iv.fecha <= '$fechafin' and iv.idalmacen='$idalmacen'
+		     - Traspasos Enviados
+		       SELECT SUM(it.saldocantidad) AS Pares, SUM(it.preciounitario) AS TotalBs
+		       FROM traspaso t,traspasodetallepar it,modelo mdd
+		       WHERE t.idtraspaso = it.iddetalletraspaso and t.idalmacen = '$idalmacen' and mdd.idvendedor = '$idempleado' 
+		       and it.idmodeloorigen = mdd.idmodelo AND mdd.idmarca = '$idmarca' and t.fecha >= '$fechainicio' AND t.fecha <= '$fechafin'
+		- Traspasos Recibidos
+		     - Traspasos Internos
+		       SELECT SUM(iv.saldocantidad) AS Pares, SUM(iv.preciounitario) AS TotalBs
+		       FROM traspasosinternos iv,modelo md,ventas v, empleados em,empleados emo
+		       WHERE iv.idventa = v.idventa and iv.idmodelo = md.idmodelo and iv.idvendedor = em.idempleado 
+		       and iv.idvendedororigen = emo.idempleado and iv.idvendedor='$idempleado' AND md.idmarca = '$idmarca'
+		       AND iv.fecha >= '$fechainicio' AND iv.fecha <= '$fechafin' and iv.idalmacen='$idalmacen'
+		     - Traspasos Enviados
+		       SELECT  SUM(it.saldocantidad) AS Pares, SUM(it.preciounitario) AS TotalBs
+		       FROM traspaso t,traspasodetallepar it,modelo mdd
+		       WHERE t.idtraspaso = it.iddetalletraspaso and it.idmodelo = mdd.idmodelo and t.idalmacendestino = '$idalmacen'
+		       and mdd.idvendedor = '$idempleado' AND mdd.idvendedor = t.responsable AND mdd.idmarca = '$idmarca' 
+		       and t.fecha >= '$fechainicio' AND t.fecha <= '$fechafin'
+		- Ventas
+		  SELECT SUM(vi.cantidad) AS Pares, sUM(vi.precioventa) AS TotalBs
+		  FROM ventas v,modelo mo,ventaitem vi
+		  WHERE v.idventa = vi.idventa AND vi.idmodelo = mo.idmodelo and mo.idmarca = '$idmarca' and v.fecha >= '$fechainicio'
+		  AND v.fecha <= '$fechafin' and v.idalmacen='$idalmacen' and v.idvendedor='$idempleado'
+		- Devolucion
+		  SELECT COUNT(v.iddetalledevolucion) AS Pares, SUM(v.valorcalzado) AS TotalBs
+		  FROM detalledevolucion v,devolucion d,kardexdetallepar k
+		  WHERE v.idkardexunico = k.idkardexunico and v.iddevolucion = d.iddevolucion AND d.idmarca = '$idmarca' 
+		  and d.idvendedor = '$idempleado' and d.fecha >= '$fechainicio' AND d.fecha <= '$fechafin' and d.idalmacen = '$idalmacen'
+
+
+ 
+
+
+
+
+
+
+

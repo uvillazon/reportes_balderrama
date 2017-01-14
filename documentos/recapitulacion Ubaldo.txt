@@ -1,0 +1,36 @@
+elect * from ventas where idventa = 30606 --limit 200
+select * from ventaitem where idventa = 30606
+select count(*) , idventa from `ventaitem` group by idventa--  where idventa = 3282
+
+
+select * ,
+(select idventa from ventas where idventa=30606) as uno
+from ventas where idventa = 30606  
+
+
+SELECT idkardex,tabla,mesrango,idperiodo,fechainicio,fechafin,mesanterior,estado FROM administrakardex 
+  WHERE mesrango= '112016' and idalmacen = 'alm-3'
+  
+  SELECT idmarca, nombre FROM marcas WHERE estado = 'activo' and origen = 'BRASIL'
+  
+  SELECT 
+  em.idempleado , 
+  e.nombres ,
+  '' as stock_caja,
+  ( SELECT COUNT(kp.idkardexunico) --, SUM(kp.preciounitario) AS sus
+		       FROM modelo m,kardexdetallepar kp
+		       WHERE kp.idmodelo=m.idmodelo  
+		       and m.idvendedor=em.idempleado AND m.idmarca = 'mar-1' AND (DATE_FORMAT(m.fecha, '%Y-%m-%d')) >= '2016-11-01' 
+		       AND (DATE_FORMAT(m.fecha, '%Y-%m-%d')) <= '2016-11-31' and m.idalmacen='alm-3' and kp.idalmacen='alm-3'
+) as stock_pares,
+  '' as stock_dol
+  FROM empleadomarca em, empleados e 
+  WHERE em.idempleado = e.idempleado AND em.idmarca = 'mar-1' AND em.idalmacen ='alm-3' and em.estado='A'
+  
+  
+  SELECT COUNT(kp.idkardexunico) AS Pares, SUM(kp.preciounitario) AS sus
+		       FROM modelo m,kardexdetallepar kp
+		       WHERE kp.idmodelo=m.idmodelo  
+		       and m.idvendedor='emp-41' AND m.idmarca = 'mar-1' AND (DATE_FORMAT(m.fecha, '%Y-%m-%d')) >= '2016-11-01' 
+		       AND (DATE_FORMAT(m.fecha, '%Y-%m-%d')) <= '2016-11-31' and m.idalmacen='alm-3' and kp.idalmacen='alm-3'
+		 --    Calcular cantidad de cajas de acuerdo a la cantidad total de pares/12
